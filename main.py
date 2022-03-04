@@ -9,21 +9,45 @@ import numpy as np
 # save_current_parameters_to_file('D:\\Рабочий стол\\Lab_1_settings.json')
 settings = {
     'filepath': 'D:\\Рабочий стол\\TestImages\\01_apc.tif',
-    # MIN_VALUE = 0
-    'left_contrast_border_value': 20,
-    # MAX_VALUE = 100
-    'right_contrast_border_value': 60,
+    'task_1_parameter': 100,
     'path_to_save_result': "D:\\Рабочий стол\\Images"
 }
 
 MAX_BRIGHTNESS_VALUE = 255
 MIN_BRIGHTNESS_VALUE = 0
-TASK_1_PARAMETER = 100
 
 
-def open_image(filepath):
+def open_image_as_arrays(filepath):
     img_as_arrays = imread(filepath)
     return img_as_arrays
+
+
+def process_parameters_for_contrasting(f_min, f_max):
+    proc_a = MAX_BRIGHTNESS_VALUE/(f_max - f_min)
+    proc_b = -MAX_BRIGHTNESS_VALUE*f_min/(f_max - f_min)
+    return proc_a, proc_b
+
+
+def get_max_and_min_brightness_value(img_as_arrays):
+    min_el = np.min(img_as_arrays)
+    max_el = np.max(img_as_arrays)
+    return max_el, min_el
+
+
+def transformation_function_task_2(value_to_proc):
+    elem_value = int(a * value_to_proc + b)
+    if elem_value <= MAX_BRIGHTNESS_VALUE:
+        return elem_value
+    else:
+        return MAX_BRIGHTNESS_VALUE
+
+
+def contrasting(img_as_arrays):
+    shape = np.shape(img_as_arrays)
+    new_img_list = list(map(transformation_function_task_2, np.reshape(img_as_arrays, img_as_arrays.size)))
+    single_dimension_array = np.array(new_img_list)
+    new_img = np.reshape(single_dimension_array, (shape[0], shape[1]))
+    return new_img
 
 
 def transformation_function_task_1(element_value):
@@ -33,9 +57,9 @@ def transformation_function_task_1(element_value):
         return MAX_BRIGHTNESS_VALUE
 
 
-def border_processing(img):
-    shape = np.shape(img)
-    new_img_list = list(map(transformation_function_task_1, np.reshape(img, img.size)))
+def border_processing(img_as_arrays):
+    shape = np.shape(img_as_arrays)
+    new_img_list = list(map(transformation_function_task_1, np.reshape(img_as_arrays, img_as_arrays.size)))
     single_dimension_array = np.array(new_img_list)
     new_img = np.reshape(single_dimension_array, (shape[0], shape[1]))
     return new_img
@@ -48,7 +72,7 @@ def read_parameters(filepath):
     return json_data
 
 
-def create_figure_of_union_plot(image1, image2):
+def create_figure_of_union_plot(image1, image2, task_function):
     fig = plt.figure(figsize=(20, 10))
     fig.add_subplot(3, 2, 1)
     plt.title("Source image")
@@ -63,16 +87,16 @@ def create_figure_of_union_plot(image1, image2):
     plt.title("Processed image Histogram")
     create_wb_histogram_plot(image2)
     fig.add_subplot(3, 2, 5)
-    create_border_function_graphic()
+    create_border_function_graphic(task_function)
     return fig
 
 
-def create_border_function_graphic():
-    plt.axis([0, 255, 0, 260])
+def create_border_function_graphic(function):
+    plt.axis([0, 255, 0, 270])
     plt.title('Transformation function graphic')
     arr_x_values = np.arange(255)
-    dots = list(map(transformation_function_task_1, np.arange(255)))
-    plt.plot(arr_x_values, np.array(dots), linewidth=2.0)
+    dots = list(map(function, np.arange(255)))
+    plt.plot(arr_x_values, np.array(dots), color='blue', linewidth=2.0)
 
 
 def save_current_parameters_to_file(filepath):
@@ -103,28 +127,31 @@ def create_wb_histogram_plot(img):
     plt.plot(bins[:-1], hist, color='blue', linestyle='-', linewidth=1)
 
 
-
-
-
-
-
-
 save_current_parameters_to_file('D:\\Рабочий стол\\Lab_1_settings.json')
 json_settings_file = json.load(open('D:\\Рабочий стол\\Lab_1_settings.json'))
 image_filepath = json_settings_file['filepath']
-contrast_left_border = json_settings_file['left_contrast_border_value']
-contrast_right_border = json_settings_file['right_contrast_border_value']
+TASK_1_PARAMETER = json_settings_file['task_1_parameter']
 path_to_save = json_settings_file['path_to_save_result']
-opened_image = open_image(image_filepath)
 
-create_figure_of_union_plot(opened_image, border_processing(opened_image))
+opened_image = open_image_as_arrays(image_filepath)
+max_value, min_value = get_max_and_min_brightness_value(opened_image)
+
+
+create_figure_of_union_plot(opened_image, border_processing(opened_image), transformation_function_task_1)
 plt.tight_layout()
 show()
 
 print(border_processing(opened_image))
+print("For task2 parameters")
+print(min_value)
+print(max_value)
+a, b = process_parameters_for_contrasting(min_value, max_value)
+print(a)
+print(b)
 
-
-
+create_figure_of_union_plot(opened_image, contrasting(opened_image), transformation_function_task_2)
+plt.tight_layout()
+show()
 
 
 
